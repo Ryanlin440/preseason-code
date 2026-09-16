@@ -1,21 +1,88 @@
 #include "main.h"
 #include "lemlib/api.hpp"
-
-pros::MotorGroup left_motors({-1, 2, -3}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
-pros::MotorGroup right_motors({4, -5, 6}, pros::MotorGearset::green); // right motors use 200 RPM cartridges
+#include "lemlib/chassis/chassis.hpp"
+#include "lemlib/chassis/trackingWheel.hpp"
+#include "pros/abstract_motor.hpp"
+#include "pros/adi.h"
+#include "pros/adi.hpp"
+#include "pros/llemu.hpp"
+#include "pros/misc.h"
+#include "pros/motor_group.hpp"
+#include "pros/motors.h"
+#include "robot.h"
+pros::MotorGroup right_motors({11, 12, -7}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
+pros::MotorGroup left_motors({-20, -19, 9}, pros::MotorGearset::blue); // right motors use 200 RPM cartridges
 // drivetrain settings
 lemlib::Drivetrain drivetrain(&left_motors, // left motor group
                               &right_motors, // right motor group
-                              10, // 10 inch track width
-                              lemlib::Omniwheel::NEW_4, // using new 4" omnis
-                              360, // drivetrain rpm is 360
+                              12.6, // 10 inch track width
+                              lemlib::Omniwheel::NEW_275, // using new 4" omnis
+                              450, // drivetrain rpm is 360
                               2 // horizontal drift is 2 (for now)
 );
-pros::Imu imu(10);
-pros::Rotation vertical_rotation_sensor(1);
-pros::Rotation horizontal_rotation_sensor(2);
-lemlib::TrackingWheel vertical_tracking_wheel(&vertical_rotation_sensor, lemlib::Omniwheel::NEW_275, -5.75);
-lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_rotation_sensor, lemlib::Omniwheel::NEW_275, -5.75);
+
+// pros::Distance backSensor(20);
+pros::Distance frontSensor(20);
+pros::Distance leftSensor(17);
+pros::Distance rightSensor(16);
+
+pros::Imu imu(2);
+pros::Rotation vertical_rotation_sensor(-5);
+pros::Rotation horizontal_rotation_sensor(3);
+lemlib::TrackingWheel vertical_tracking_wheel(&vertical_rotation_sensor, lemlib::Omniwheel::NEW_275, -1);
+lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_rotation_sensor, lemlib::Omniwheel::NEW_275, -1.5);
+
+pros::MotorGroup cascade ({10, -1}, pros::v5::MotorGears::blue);//2 11w
+pros::Rotation cascade_sensor(-16);
+lemlib::PID cascade_pid(0,0,0,0);
+void moveCascadeTo(double target){
+
+    cascade_pid.reset();
+    while (true) {
+        float current_pos = cascade_sensor.get_position() / 100.0; 
+        float error = target - current_pos;
+        float output = cascade_pid.update(error);
+
+        cascade.move(output);
+
+        if (std::abs(error) < 1.0) {
+            cascade.move(0);
+            break;
+        }
+        pros::delay(10);
+    }
+}
+
+// TODO: placeholder port/gearset -- update to the real toggles port(s)
+pros::MotorGroup toggles({13}, pros::v5::MotorGears::green);
+
+pros::adi::DigitalOut clawShut(1, false);
+
+bool flipBool = false;
+pros::adi::DigitalOut clawFlip(2, flipBool);
+pros::Distance claw_sensor(14);
+
+
+pros::MotorGroup arm_motor ({7, -8}, pros::v5::MotorGears::green);//2 5.5
+pros::Rotation arm_sensor(15);
+lemlib::PID arm_pid(0,0,0,0);
+void moveArmTo(double target){
+
+    arm_pid.reset();
+    while (true) {
+        float current_pos = arm_sensor.get_position() / 100.0; 
+        float error = target - current_pos;
+        float output = arm_pid.update(error);
+
+        arm_motor.move(output);
+
+        if (std::abs(error) < 1.0) {
+            arm_motor.move(0);
+            break;
+        }
+        pros::delay(10);
+    }
+}
 
 lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
@@ -24,7 +91,7 @@ lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel
                             &imu // inertial sensor
 );
 // lateral PID controller
-lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
+lemlib::ControllerSettings lateral_controller(20, // proportional gain (kP)
                                               0, // integral gain (kI)
                                               3, // derivative gain (kD)
                                               3, // anti windup
@@ -89,20 +156,48 @@ void on_center_button() {
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+int count = 20;
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
-    // print position to brain screen
-    pros::Task screen_task([&]() {
+    cascade_sensor.reset_position();
+    // while (true) {
+    //         // print robot location to the brain screen
+    //         // pros::lcd::print(3, "Front sensor: %.2f", (double)(frontSensor.get() / 25.4));
+    //         pros::lcd::print(4, "asdl %d", count);
+    //         // delay to save resources
+    //         count+=5;
+    //         pros::delay(200);
+    //     }
+    pros::Task screenTask([&]() {
+        // pros::lcd::print(0, "TASK RUNNING");
+        // count = 20;
         while (true) {
             // print robot location to the brain screen
+
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            pros::lcd::print(3, "Front sensor: %.2f", (double)(frontSensor.get() / 25.4));
+            pros::lcd::print(4, "Cascade Sensor: %.2f", (double)(cascade_sensor.get_position()/100.0));
+            // pros::lcd::print(4, "asdl %d", count);
+            // count+=2;
             // delay to save resources
-            pros::delay(20);
+            pros::delay(40);
+            //
         }
     });
+    // pros::Task armTask([&]() {
+    //     while (true) {
+    //         if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){
+    //             moveArmTo(upArmDeg);
+    //         }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
+    //             moveArmTo(downArmDeg);
+    //         }
+    //         pros::delay(20);
+    //         }
+    //     });
+
 }
 
 /**
@@ -134,7 +229,8 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
+
+void autonomous() { runAuton(); }
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -150,16 +246,53 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 
+
 void opcontrol() {
     // loop forever
+    // autonomous();
     while (true) {
         // get left y and right y positions
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-        int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
+        int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
         // move the robot
-        chassis.tank(leftY, rightY);
+        chassis.arcade(leftY, rightX);
 
+
+        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2) && claw_sensor.get_distance() < 20){//opening and closing claw
+            clawShut.set_value(true);
+        }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+            clawShut.set_value(false);
+        }
+        
+        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_UP)){//cascade movement
+            cascade.move(127);
+        }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
+            cascade.move(-127);
+        }else{
+            cascade.move(0);
+        }
+
+        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_LEFT)){//flipping the claw yaw
+            flipBool = !flipBool;
+            clawFlip.set_value(flipBool);
+        }
+        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)){//moving the toggles
+            toggles.move(-127);
+        }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)){
+            toggles.move(-50);
+        }else{
+            toggles.move(0);
+        }
+        if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){//ARM movement
+            arm_motor.move(127);
+        }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){
+            arm_motor.move(-127);
+        }else{
+            arm_motor.move(0);
+        }
+
+        //cascade winch toggle
         // delay to save resources
         pros::delay(25);
     }
