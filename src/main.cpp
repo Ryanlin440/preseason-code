@@ -33,7 +33,7 @@ lemlib::TrackingWheel vertical_tracking_wheel(&vertical_rotation_sensor, lemlib:
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_rotation_sensor, lemlib::Omniwheel::NEW_275, -1.5);
 
 pros::MotorGroup cascade ({10, -1}, pros::v5::MotorGears::blue);//2 11w
-pros::Rotation cascade_sensor(-16);
+pros::Rotation cascade_sensor(6);
 lemlib::PID cascade_pid(0,0,0,0);
 void moveCascadeTo(double target){
 
@@ -63,8 +63,8 @@ pros::adi::DigitalOut clawFlip(2, flipBool);
 pros::Distance claw_sensor(14);
 
 
-pros::MotorGroup arm_motor ({7, -8}, pros::v5::MotorGears::green);//2 5.5
-pros::Rotation arm_sensor(15);
+pros::MotorGroup arm_motor ({15, -16}, pros::v5::MotorGears::green);//2 5.5
+pros::Rotation arm_sensor(8);
 lemlib::PID arm_pid(0,0,0,0);
 void moveArmTo(double target){
 
@@ -269,6 +269,7 @@ void opcontrol() {
             cascade.move(127);
         }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
             cascade.move(-127);
+            std::cout << "Testing" << std::endl;
         }else{
             cascade.move(0);
         }
