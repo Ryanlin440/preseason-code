@@ -31,6 +31,10 @@ extern lemlib::Chassis chassis;
 extern pros::Distance frontSensor;
 extern pros::Distance leftSensor;
 extern pros::Distance rightSensor;
+extern pros::Distance backBottomSensor;
+extern pros::Distance backTopSensor;
+extern pros::Distance clawSensor;
+
 
 extern pros::Imu imu;
 extern pros::Rotation vertical_rotation_sensor;
@@ -54,15 +58,18 @@ extern pros::Rotation arm_sensor;
 extern lemlib::PID arm_pid;
 void moveArmTo(double target);
 
-inline constexpr double downArmDeg = 3;
-inline constexpr double upArmDeg = 5;
+inline constexpr double downArmDegPinAndCup = 3;
+inline constexpr double downArmDegJustPin = 3;
+inline constexpr double allianceGoalWithNothing = 5;
+inline constexpr double normalAllianceGoal = 5;
 
-extern pros::MotorGroup toggles;
 
 
 extern pros::adi::DigitalOut clawShut;
-extern pros::adi::DigitalOut clawFlip;
 extern bool flipBool;
+extern pros::adi::DigitalOut leftToggle;
+extern pros::adi::DigitalOut rightToggle;
+
 
 // ---------------------------------------------------------------- controller
 extern pros::Controller controller;
@@ -75,3 +82,18 @@ void runAuton();
 void darwin_test();
 void frictiontest();
 void torquetest();
+
+// Suppresses the brain-screen odometry readout so the tuner can own the screen.
+extern bool printingDistances;
+
+/// Blocking turn-PID auto-tuner (~30-60s). Give it clear floor space and call it
+/// once. startKD = 0 picks a starting kD automatically from kP.
+void turnTunerAuton(double kP, double startKD = 0);
+
+/// Set true from any task to abort turnTunerAuton(); holding X also works.
+extern bool stopTuning;
+
+void L1Button();
+void L2Button();
+void R1Button();
+void toggleMech();
