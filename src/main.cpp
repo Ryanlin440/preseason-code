@@ -12,8 +12,8 @@
 #include "robot.h"
 #include <cmath>
 #include <cstdio>
-pros::MotorGroup right_motors({11, 12, -7}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
-pros::MotorGroup left_motors({-20, -19, 9}, pros::MotorGearset::blue); // right motors use 200 RPM cartridges
+pros::MotorGroup right_motors({11, 12, -13}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
+pros::MotorGroup left_motors({-20, -19, 18}, pros::MotorGearset::blue); // right motors use 200 RPM cartridges
 // drivetrain settings
 lemlib::Drivetrain drivetrain(&left_motors, // left motor group
                               &right_motors, // right motor group
@@ -24,18 +24,18 @@ lemlib::Drivetrain drivetrain(&left_motors, // left motor group
 );
 
 // pros::Distance backSensor(20);
-pros::Distance frontSensor(20);
+pros::Distance frontSensor(15);
 pros::Distance leftSensor(17);
-pros::Distance rightSensor(16);
+pros::Distance rightSensor(14);
 
-pros::Imu imu(2);
-pros::Rotation vertical_rotation_sensor(-5);
-pros::Rotation horizontal_rotation_sensor(3);
+pros::Imu imu(6);
+pros::Rotation vertical_rotation_sensor(-21);
+pros::Rotation horizontal_rotation_sensor(5);
 lemlib::TrackingWheel vertical_tracking_wheel(&vertical_rotation_sensor, lemlib::Omniwheel::NEW_275, -1);
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_rotation_sensor, lemlib::Omniwheel::NEW_275, -1.5);
 
-pros::MotorGroup cascade ({10, -1}, pros::v5::MotorGears::blue);//2 11w
-pros::Rotation cascade_sensor(6);
+pros::MotorGroup cascade ({1, -2}, pros::v5::MotorGears::blue);//2 11w
+pros::Rotation cascade_sensor(3);
 lemlib::PID cascade_pid(2,0,0,0);
 void moveCascadeTo(double target){
 
@@ -63,12 +63,12 @@ bool flipBool = false;
 pros::adi::DigitalOut leftToggle(2, false);
 pros::adi::DigitalOut rightToggle(3, false);
 
-pros::Distance claw_sensor(14);
-                                                            pros::Distance backBottomSensor(14);
-                                                            pros::Distance backTopSensor(14);
+pros::Distance claw_sensor(9);
+                                                            pros::Distance backBottomSensor(4);
+                                                            pros::Distance backTopSensor(10);
                                                             pros::Distance clawSensor(14);
 
-pros::MotorGroup arm_motor ({15, -16}, pros::v5::MotorGears::green);//2 5.5
+pros::MotorGroup arm_motor ({7, -8}, pros::v5::MotorGears::green);//2 5.5
 pros::Rotation arm_sensor(8);
 lemlib::PID arm_pid(2,0,0,0);
 void moveArmTo(double target){
