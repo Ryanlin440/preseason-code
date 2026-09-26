@@ -28,9 +28,9 @@ pros::Distance frontSensor(15);
 pros::Distance leftSensor(17);
 pros::Distance rightSensor(14);
 
-pros::Imu imu(6);
+pros::Imu imu(5);
 pros::Rotation vertical_rotation_sensor(-21);
-pros::Rotation horizontal_rotation_sensor(5);
+pros::Rotation horizontal_rotation_sensor(4);
 lemlib::TrackingWheel vertical_tracking_wheel(&vertical_rotation_sensor, lemlib::Omniwheel::NEW_275, -1);
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_rotation_sensor, lemlib::Omniwheel::NEW_275, -1.5);
 
@@ -64,12 +64,11 @@ pros::adi::DigitalOut leftToggle(2, false);
 pros::adi::DigitalOut rightToggle(3, false);
 
 pros::Distance claw_sensor(9);
-                                                            pros::Distance backBottomSensor(4);
-                                                            pros::Distance backTopSensor(10);
-                                                            pros::Distance clawSensor(14);
+pros::Distance backBottomSensor(8);
+pros::Distance backTopSensor(8);
 
-pros::MotorGroup arm_motor ({7, -8}, pros::v5::MotorGears::green);//2 5.5
-pros::Rotation arm_sensor(8);
+pros::MotorGroup arm_motor ({6, -7}, pros::v5::MotorGears::green);//2 5.5
+pros::Rotation arm_sensor(10);
 lemlib::PID arm_pid(2,0,0,0);
 void moveArmTo(double target){
 
