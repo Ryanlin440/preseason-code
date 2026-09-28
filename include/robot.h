@@ -56,10 +56,11 @@ void moveCascadeTo(double target);
 extern pros::MotorGroup arm_motor;
 extern pros::Rotation arm_sensor;
 extern lemlib::PID arm_pid;
-void moveArmTo(double target);
-
-inline constexpr double downArmDegPinAndCup = 3;
-inline constexpr double downArmDegJustPin = 3;
+extern lemlib::PID arm_hold_pid;
+void moveArmTo(double target, int timeoutMs = 1500);
+void moveArmToHold(double target, int timeoutMs = 1500);
+inline constexpr double downArmDegPinAndCup = 29;
+inline constexpr double downArmDegJustPin = 0;
 inline constexpr double allianceGoalWithNothing = 5;
 inline constexpr double normalAllianceGoal = 5;
 
@@ -82,16 +83,10 @@ void runAuton();
 void darwin_test();
 void frictiontest();
 void torquetest();
+void tuningPID();
 
-// Suppresses the brain-screen odometry readout so the tuner can own the screen.
-extern bool printingDistances;
 
-/// Blocking turn-PID auto-tuner (~30-60s). Give it clear floor space and call it
-/// once. startKD = 0 picks a starting kD automatically from kP.
-void turnTunerAuton(double kP, double startKD = 0);
 
-/// Set true from any task to abort turnTunerAuton(); holding X also works.
-extern bool stopTuning;
 
 void L1Button();
 void L2Button();

@@ -12,7 +12,9 @@
 
 void redRightAuton();
 
-void runAuton() { redRightAuton(); }
+void runAuton() { 
+    redRightAuton(); 
+}
 
 // ---------------------------------------------------------------------------
 // Subsystem helpers used by the routes below
@@ -99,4 +101,11 @@ void torquetest() {
             left_motors.move(0);
         }
     }
+}
+
+void tuningPID(){
+    chassis.turnToHeading(90, 2000);
+    chassis.turnToHeading(180, 2000);
+    chassis.turnToHeading(270, 2000);
+    chassis.turnToHeading(0, 2000);
 }
