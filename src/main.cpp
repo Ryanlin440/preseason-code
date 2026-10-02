@@ -69,22 +69,17 @@ pros::Distance backTopSensor(8);
 
 pros::MotorGroup arm_motor ({6, -7}, pros::v5::MotorGears::green);//2 5.5
 pros::Rotation arm_sensor(10);
-lemlib::PID arm_pid(8,0,50,0);      // moving to a position (moveArmTo)
-lemlib::PID arm_hold_pid(7,0,20,0); // holding a position (holdArm) -- tune separately
-// angle the arm task keeps the arm at between moves; NAN = not holding
+lemlib::PID arm_pid(8,0,50,0);     
+lemlib::PID arm_hold_pid(7,0,20,0); 
 void moveArmTo(double target, int timeoutMs){
-
     arm_pid.reset();
     uint32_t start = pros::millis();
     while (true) {
         float current_pos = arm_sensor.get_position() / 100.0; 
         float error = target - current_pos;
         float output = arm_pid.update(error);
-        output = std::clamp(output, -40.0f, 40.0f); // cap arm power (move() range is -127 to 127)
-
+        output = std::clamp(output, -80.0f, 80.0f);
         arm_motor.move(output);
-
-        // give up after timeoutMs so the arm task can't get stuck here forever
         if (std::abs(error) < 3.0 || pros::millis() - start > (uint32_t)timeoutMs) {
             arm_motor.move(0);
             break;
@@ -230,49 +225,11 @@ void initialize() {
     pros::Task armTask([&]() {
         while (true) {
             L1Button();
-            // if(controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)){
-            //     clawBool=!clawBool;
-            //     clawShut.set_value(clawBool);
-            // }else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)){//maybe switch the order of these two?
-            //     if(clawBool==false && claw_sensor.get_distance() < 100){
-            //         clawBool=true;
-            //         clawShut.set_value(clawBool);
-            //     }
-            // }else if(clawBool==false){
-            //     moveArmTo(downArmDegPinAndCup);
-            // }
-            L2Button();
-            // if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){//maybe switch the order of these two?
-            //     if(clawBool==false){
-            //         moveArmTo(downArmDegJustPin);
-            //     }else{//claw bool == true
-            //         clawShut.set_value(false);
-            //         pros::delay(200);
-            //         clawShut.set_value(true);
-            //     }
-            // }
-            R1Button();
-            // if(controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){//ARM movement
-            //     if(pressNum++ == 0){
-            //         moveArmTo(170);
-            //     }else if (pressNum == 1){
-            //         if(backBottomSensor.get_distance() > 500 && backTopSensor.get_distance() > 500){
-            //             moveArmTo(270);
-            //         }else if(backBottomSensor.get_distance() < 200 && backTopSensor.get_distance() > 500){
-            //             moveArmTo(360);
-            //         }else if(backBottomSensor.get_distance() < 200 && backTopSensor.get_distance() < 200){
-            //             while(backTopSensor.get_distance() < 200){
-            //                 cascade.move(127);
-            //             }
-            //             moveArmTo(360);
-            //         }
 
-            //         pressNum=0;
-            //         clawShut.set_value(false);
-            //         clawBool=false;
-            //     }
-            //     arm_motor.move(127);
-            // }
+            L2Button();
+
+            R1Button();
+            
 
             pros::delay(50);
             }
@@ -400,12 +357,13 @@ void R1Button(){
     if(controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){//ARM movement
         if(pressNum == 0){
             moveArmToHold(300);
-            arm_hold_pid.reset();
+            // arm_hold_pid.reset();
             armNeedsDown = false;
             pressNum = 1;
         }else if (pressNum==1){
 
             moveArmTo(360+150);
+            
             pressNum=0;
             clawShut.set_value(false);
             clawBool=false;
@@ -422,7 +380,5 @@ void toggleMech(){
     }else{
         toggles.set_value(false);
     }
-
-
 };
 
