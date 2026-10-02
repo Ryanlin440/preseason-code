@@ -69,8 +69,8 @@ pros::Distance backTopSensor(8);
 
 pros::MotorGroup arm_motor ({6, -7}, pros::v5::MotorGears::green);//2 5.5
 pros::Rotation arm_sensor(10);
-lemlib::PID arm_pid(8,0,50,0);     
-lemlib::PID arm_hold_pid(7,0,20,0); 
+lemlib::PID arm_pid(8,0,70,0);     
+lemlib::PID arm_hold_pid(7,0,50,0); 
 void moveArmTo(double target, int timeoutMs){
     arm_pid.reset();
     uint32_t start = pros::millis();
@@ -78,7 +78,7 @@ void moveArmTo(double target, int timeoutMs){
         float current_pos = arm_sensor.get_position() / 100.0; 
         float error = target - current_pos;
         float output = arm_pid.update(error);
-        output = std::clamp(output, -80.0f, 80.0f);
+        output = std::clamp(output, -100.0f, 100.0f);
         arm_motor.move(output);
         if (std::abs(error) < 3.0 || pros::millis() - start > (uint32_t)timeoutMs) {
             arm_motor.move(0);
@@ -100,7 +100,7 @@ void moveArmToHold(double target, int timeoutMs){
         arm_motor.move(output);
 
         // give up after timeoutMs so the arm task can't get stuck here forever
-        if (std::abs(error) < 3.0 || pros::millis() - start > (uint32_t)timeoutMs) {
+        if (std::abs(error) < 2.0 || pros::millis() - start > (uint32_t)timeoutMs) {
             arm_motor.set_brake_mode(pros::MotorBrake::hold);
             arm_motor.move(0);
             break;
@@ -354,9 +354,12 @@ void L2Button(){
     }
 };
 void R1Button(){
+    if(pressNum==1){
+        moveArmToHold(300);
+    }
     if(controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){//ARM movement
+
         if(pressNum == 0){
-            moveArmToHold(300);
             // arm_hold_pid.reset();
             armNeedsDown = false;
             pressNum = 1;
