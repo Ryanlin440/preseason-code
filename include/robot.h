@@ -59,7 +59,7 @@ extern lemlib::PID arm_pid;
 extern lemlib::PID arm_hold_pid;
 void moveArmTo(double target, int timeoutMs = 1500);
 void moveArmToHold(double target, int timeoutMs = 1500);
-inline constexpr double downArmDegPinAndCup = 29;
+inline constexpr double downArmDegPinAndCup = 20;
 inline constexpr double downArmDegJustPin = 0;
 inline constexpr double allianceGoalWithNothing = 5;
 inline constexpr double normalAllianceGoal = 5;

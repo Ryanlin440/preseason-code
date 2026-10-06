@@ -37,7 +37,7 @@ lemlib::TrackingWheel vertical_tracking_wheel(&vertical_rotation_sensor, lemlib:
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_rotation_sensor, lemlib::Omniwheel::NEW_275, -1.5);
 
 pros::MotorGroup cascade ({1, -2}, pros::v5::MotorGears::blue);//2 11w
-pros::Rotation cascade_sensor(3);
+pros::Rotation cascade_sensor(-3);
 lemlib::PID cascade_pid(20,0,0,0);
 void moveCascadeTo(double target){
 
@@ -49,7 +49,7 @@ void moveCascadeTo(double target){
 
         cascade.move(output);
 
-        if (std::abs(error) < 1.0) {
+        if (std::abs(error) < 5.0) {
             cascade.move(0);
             break;
         }
@@ -78,7 +78,7 @@ void moveArmTo(double target, int timeoutMs){
         float current_pos = arm_sensor.get_position() / 100.0; 
         float error = target - current_pos;
         float output = arm_pid.update(error);
-        output = std::clamp(output, -100.0f, 100.0f);
+        output = std::clamp(output, -127.0f, 127.0f);
         arm_motor.move(output);
         if (std::abs(error) < 3.0 || pros::millis() - start > (uint32_t)timeoutMs) {
             arm_motor.move(0);
@@ -102,7 +102,7 @@ void moveArmToHold(double target, int timeoutMs){
         // give up after timeoutMs so the arm task can't get stuck here forever
         if (std::abs(error) < 2.0 || pros::millis() - start > (uint32_t)timeoutMs) {
             arm_motor.set_brake_mode(pros::MotorBrake::hold);
-            arm_motor.move(0);
+            arm_motor.move_voltage(0);
             break;
         }
         pros::delay(10);
@@ -186,12 +186,14 @@ void on_center_button() {
 int pressNum = 0;
 // Cleared by turnTunerAuton() so the screen task stops overwriting its readout.
 bool printingDistances = true;
+bool armNeedsDown = true;
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
     cascade_sensor.reset_position();
     arm_sensor.reset_position();
     arm_motor.set_brake_mode(pros::MotorBrake::hold);
+    // arm_motor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     // while (true) {
     //         // print robot location to the brain screen
     //         // pros::lcd::print(3, "Front sensor: %.2f", (double)(frontSensor.get() / 25.4));
@@ -309,10 +311,14 @@ void opcontrol() {
     // loop forever
     // autonomous();
 
-    rotationChassisPID();
+    // rotationChassisPID();
     // linearChassisPID();
-
-    return;
+    
+    // return;
+    // while(true){
+    //     arm_motor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    //     arm_motor.move_velocity(0);
+    // }
     while (true) {
 
         // get left y and right y positions
@@ -341,7 +347,6 @@ void opcontrol() {
     }
 }
 // true when the arm should return to the down position (set whenever the claw opens)
-bool armNeedsDown = false;
 void L1Button(){
     if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)) {
     // Button was JUST pressed
@@ -379,7 +384,7 @@ void L2Button(){
 };
 void R1Button(){
     if(pressNum==1){
-        moveArmToHold(300);
+        // moveArmToHold(300);
     }
     if(controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)){//ARM movement
 
@@ -387,18 +392,28 @@ void R1Button(){
             // arm_hold_pid.reset();
             armNeedsDown = false;
             pressNum = 1;
+            moveArmToHold(300);
         }else if (pressNum==1){
-
-            moveArmTo(360+150);
+            cascade.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+            moveCascadeTo(660);
+            cascade.move_velocity(0);
+            moveArmTo(360+120);
             
             pressNum=0;
             clawShut.set_value(false);
             clawBool=false;
             armNeedsDown = true;
             pros::delay(500);
+            cascade.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+            moveCascadeTo(0);
         }
-        if(armNeedsDown) moveArmTo(downArmDegPinAndCup);
+        if(armNeedsDown) moveArmTo(downArmDegPinAndCup+50);
     }
+     if(armNeedsDown) {
+        arm_motor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        arm_motor.move_velocity(0);
+        
+     }
 };
 void toggleMech(){
     if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)){
