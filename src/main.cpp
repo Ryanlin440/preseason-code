@@ -285,10 +285,34 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 
+void rotationChassisPID(){
+    chassis.setPose(0, 0, 0);
+    chassis.turnToHeading(90, 1000);
+    pros::delay(2000);
+    chassis.turnToHeading(180, 1000);
+    pros::delay(2000);
+    chassis.turnToHeading(360, 1000);
+    pros::delay(2000);
+}
+
+void linearChassisPID(){
+    chassis.setPose(0, 0, 0);
+    chassis.turnToPoint(24, 0, 2000);
+    pros::delay(2000);
+    chassis.turnToPoint(48, 0, 2000);
+    pros::delay(2000);
+    chassis.turnToPoint(0, 0, 2000);
+    pros::delay(2000);
+}
 
 void opcontrol() {
     // loop forever
     // autonomous();
+
+    rotationChassisPID();
+    // linearChassisPID();
+
+    return;
     while (true) {
 
         // get left y and right y positions
@@ -384,4 +408,5 @@ void toggleMech(){
         toggles.set_value(false);
     }
 };
+
 
